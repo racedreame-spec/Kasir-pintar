@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kasir QRIS</title>
+<meta name="theme-color" content="#0b57d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kasir QRIS">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f7;--surface:#fff;--ink:#12202e;--muted:#5d6b7a;--line:#d9dfe6;--accent:#0b57d0;--accent-ink:#fff;--danger:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1720;--surface:#18232f;--ink:#eaf0f6;--muted:#9aa8b6;--line:#2a3846;--accent:#6ea2ff;--accent-ink:#0a1626;--danger:#ffb4ab;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1720;--surface:#18232f;--ink:#eaf0f6;--muted:#9aa8b6;--line:#2a3846;--accent:#6ea2ff;--accent-ink:#0a1626;--danger:#ffb4ab;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:20px 16px 28px}
+h1{font-size:18px;margin:0;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;padding:8px 0;cursor:pointer}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.tabs button{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item{position:relative;text-align:left;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;min-height:68px}
+.item b{display:block;font-size:15px}.item span{color:var(--muted);font-size:13px}
+.item i{position:absolute;top:8px;right:8px;background:var(--accent);color:var(--accent-ink);border-radius:99px;font-style:normal;font-size:12px;font-weight:800;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
+.amount{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:right;font-size:32px;font-weight:800;min-height:68px;overflow-x:auto;white-space:nowrap}
+.amount small{font-size:16px;color:var(--muted);margin-right:6px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.pad button{height:56px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:22px;font-weight:700;cursor:pointer}
+.cart{margin:16px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.line{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line small{display:block;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.go{width:100%;height:56px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:17px;font-weight:800;cursor:pointer;margin-top:12px}
+.go:disabled{opacity:.4}
+.go.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea,input[type=text],input[type=number],input[type=search],select{width:100%;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:12px;font:inherit;font-size:15px;margin-bottom:8px}
+textarea{min-height:110px;font:13px ui-monospace,Menlo,monospace}
+p{color:var(--muted);line-height:1.5;margin:0 0 12px;font-size:14px}
+.err{color:var(--danger);font-weight:700;min-height:20px;font-size:14px}
+.qrbox{background:#fff;border-radius:16px;padding:16px;display:flex;justify-content:center;margin:12px 0}
+.total{text-align:center;font-size:30px;font-weight:800;margin:8px 0 4px}
+.hidden{display:none}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.quick button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.mrow button{background:none;border:0;color:var(--danger);font:inherit;font-weight:700;cursor:pointer;padding:6px}
+.receipt{background:var(--surface);border:1px dashed var(--muted);border-radius:6px;padding:18px 16px;font:13px/1.6 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px}
+.chips:empty{display:none}
+.chips button{flex:none;height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.gh{grid-column:1/-1;font-size:13px;margin:6px 0 0;color:var(--muted);font-weight:700;letter-spacing:.02em}
+label.cap{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:4px 0 6px}
+@keyframes enter{from{opacity:0;transform:translateY(14px)}}
+@keyframes pop{from{opacity:0;transform:scale(.92)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes print{0%{transform:translateY(9px)}60%{transform:translateY(-2px)}100%{transform:none}}
+main>section{animation:enter .32s cubic-bezier(.2,.8,.2,1)}
+#plist,#dlist,#hlist{animation:enter .4s .08s both}
+button{transition:transform .12s,background-color .2s,opacity .2s}
+button:active:not(:disabled){transform:scale(.97)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{color:var(--accent);flex:none}
+.logo .paper{transform-box:fill-box;animation:print 1.1s .1s both}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mc{height:84px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;animation:pop .35s both;animation-delay:calc(var(--i,0)*45ms)}
+.qrbox{animation:pop .45s .05s both}
+.okmark{display:flex;justify-content:center;color:#1b873f;margin:4px 0 12px}
+.okmark.warn{color:#b26a00}
+@media (prefers-color-scheme:dark){.okmark{color:#6fdc8c}.okmark.warn{color:#ffb74d}}
+.oc{stroke-dasharray:146;stroke-dashoffset:146;animation:draw .6s ease forwards}
+.ok{stroke-dasharray:40;stroke-dashoffset:40;animation:draw .4s .45s ease forwards}
+.shake{animation:shake .35s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.oc,.ok{stroke-dashoffset:0}}
+#pa{display:none}
+@media print{main{display:none!important}body{display:block;background:#fff}#pa{display:block;color:#000;font:12px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word}}
+#scov{position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column;animation:pop .25s}
+#scov.hidden{display:none}
+.scb{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+#scv{flex:1;width:100%;object-fit:cover;min-height:0;background:#000}
+.scf{position:absolute;left:10%;right:10%;top:30%;height:26%;border:3px solid #fff;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none;overflow:hidden}
+.scf::after{content:"";position:absolute;left:8px;right:8px;height:2px;background:#ff3b30;animation:sweep 1.6s ease-in-out infinite alternate}
+@keyframes sweep{from{top:8%}to{top:88%}}
+#scmsg{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);left:14px;right:14px;color:#fff;font-weight:700;text-align:center;text-shadow:0 1px 4px #000;font-size:15px}
+.scbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:#111;color:#fff;font-weight:700;font-size:14px}
+.scbar .go{width:auto;margin:0;padding:0 22px;height:46px;font-size:15px}
+#lblov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:55;animation:pop .25s}
+#lblov.hidden{display:none}
+.lbb{background:var(--surface);border-radius:16px;padding:16px;max-width:360px;width:100%;text-align:center;color:var(--ink)}
+:root{--accent2:#3b8bf5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent2:#3f7be0}}
+:root[data-theme="dark"]{--accent2:#3f7be0}
+:root[data-accent="hijau"]{--accent:#0f8a5f;--accent2:#3fc38b}
+@media (prefers-color-scheme:dark){:root[data-accent="hijau"]:not([data-theme="light"]){--accent:#4cd9a1;--accent-ink:#06261a;--accent2:#1fa97a}}
+:root[data-accent="hijau"][data-theme="dark"]{--accent:#4cd9a1;--accent-ink:#06261a;--accent2:#1fa97a}
+:root[data-accent="ungu"]{--accent:#6b3fd4;--accent2:#a06cf0}
+@media (prefers-color-scheme:dark){:root[data-accent="ungu"]:not([data-theme="light"]){--accent:#b79cff;--accent-ink:#1d1038;--accent2:#8a63e6}}
+:root[data-accent="ungu"][data-theme="dark"]{--accent:#b79cff;--accent-ink:#1d1038;--accent2:#8a63e6}
+:root[data-accent="oranye"]{--accent:#d9560b;--accent2:#f59f00}
+@media (prefers-color-scheme:dark){:root[data-accent="oranye"]:not([data-theme="light"]){--accent:#ffa45c;--accent-ink:#2b1204;--accent2:#e8890c}}
+:root[data-accent="oranye"][data-theme="dark"]{--accent:#ffa45c;--accent-ink:#2b1204;--accent2:#e8890c}
+:root[data-accent="merah"]{--accent:#c62839;--accent2:#f0607a}
+@media (prefers-color-scheme:dark){:root[data-accent="merah"]:not([data-theme="light"]){--accent:#ff8a96;--accent-ink:#2e0a10;--accent2:#e5495f}}
+:root[data-accent="merah"][data-theme="dark"]{--accent:#ff8a96;--accent-ink:#2e0a10;--accent2:#e5495f}
+:root[data-accent="teal"]{--accent:#0b7285;--accent2:#22b8cf}
+@media (prefers-color-scheme:dark){:root[data-accent="teal"]:not([data-theme="light"]){--accent:#66d9e8;--accent-ink:#04222a;--accent2:#15aabf}}
+:root[data-accent="teal"][data-theme="dark"]{--accent:#66d9e8;--accent-ink:#04222a;--accent2:#15aabf}
+body{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 9%,var(--bg)),var(--bg) 260px) no-repeat,var(--bg)}
+#shop>.row:first-child{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-ink);padding:10px 12px 10px 14px;border-radius:16px;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 28%,transparent)}
+#shop>.row:first-child .logo{color:var(--accent-ink)}
+#shop>.row:first-child .logo g:last-child{fill:var(--accent)}
+#toMenu{background:rgba(255,255,255,.22);color:inherit;border-radius:99px;padding:8px 16px}
+main .mc{border:1px solid var(--line);border-left:6px solid var(--mc,var(--accent));background:color-mix(in srgb,var(--mc,var(--accent)) 11%,var(--surface));text-align:left;padding:0 16px}
+#toPend{--mc:#e8590c}#toDebt{--mc:#d6336c}#toHist{--mc:#1c7ed6}#toItems{--mc:#2f9e44}#toBackup{--mc:#7048e8}#toSet{--mc:#0c8599}#toPrinter{--mc:#f08c00}#change{--mc:#868e96}
+main .item{border-left:5px solid var(--g,var(--line));background:color-mix(in srgb,var(--g,transparent) 9%,var(--surface))}
+main #payCash{background:#2b9348;color:#fff;border-color:transparent}
+main #payDebt{background:#d9480f;color:#fff}
+.bd{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:800;color:#fff;background:#868e96}
+.bd-qris{background:#1c7ed6}.bd-tunai{background:#2b9348}.bd-utang{background:#d9480f}.bd-lunas{background:#0c8599}
+#plist .cart{border-left:5px solid #f08c00}#dlist .cart{border-left:5px solid #d9480f}
+#dsum .mrow:last-child b{color:#d9480f}
+#hsum .mrow:nth-child(2) b{color:#2b9348}#hsum .mrow:nth-child(3) b{color:#1c7ed6}#hsum .mrow:nth-child(4) b{color:var(--accent)}
+.swatches{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.swatches button{width:44px;height:44px;border-radius:50%;border:3px solid var(--surface);background:linear-gradient(135deg,var(--sw),var(--sw2));box-shadow:0 0 0 2px var(--line);cursor:pointer}
+.swatches button.on{box-shadow:0 0 0 3px var(--ink)}
+@keyframes slideIn{from{opacity:0;transform:translateX(26px)}}
+main>section:not(#shop):not(#receipt){animation:slideIn .32s cubic-bezier(.2,.8,.2,1)}
+#receipt{animation:pop .4s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes bump{0%{transform:scale(.4)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+.item i.bump{animation:bump .4s}
+@keyframes flash{from{background:color-mix(in srgb,var(--accent) 24%,transparent)}}
+@keyframes slideRow{from{opacity:0;transform:translateX(-14px)}}
+.line.flash{animation:slideRow .3s,flash .8s ease-out;border-radius:8px}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+.rip{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:rip .5s ease-out forwards;pointer-events:none}
+main .okmark{position:relative}
+.cf{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:2px;background:var(--c);animation:cf .9s ease-out forwards;pointer-events:none}
+@keyframes cf{from{transform:translate(-50%,-50%) scale(1);opacity:1}to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--r)) scale(.6);opacity:0}}
+#discPanel{animation:enter .25s}
+@keyframes grow{from{transform:scaleY(0)}}
+.bars{display:flex;gap:6px;align-items:flex-end;height:120px;margin:14px 0}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;border:0;background:none;color:var(--muted);height:100%;cursor:pointer;font:inherit}
+.bar i{display:block;width:100%;height:var(--h);max-height:calc(100% - 18px);border-radius:8px 8px 4px 4px;background:color-mix(in srgb,var(--accent) 35%,var(--surface));transform-origin:bottom;animation:grow .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*60ms)}
+.bar.on i{background:linear-gradient(180deg,var(--accent2),var(--accent))}
+.bar small{font-size:11px}
+.rdate{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.rdate button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:22px;cursor:pointer}
+.rdate input{margin:0;flex:1;text-align:center}
+#toRecap{--mc:#099268}#toExport{--mc:#ae3ec9}
+#shpv img,#hpv img{max-width:100%;border-radius:8px;margin-top:10px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<main>
+  <section id="setup" class="hidden">
+    <h1 style="margin-bottom:12px">Pasang QRIS kamu</h1>
+    <p>Unggah gambar QRIS statis kamu, atau tempel teks hasil scan-nya. Cukup sekali, tersimpan di perangkat ini.</p>
+    <input id="file" type="file" accept="image/*" style="margin-bottom:10px">
+    <textarea id="raw" placeholder="000201010211..."></textarea>
+    <div class="err" id="err"></div>
+    <button class="go" id="save">Simpan QRIS</button>
+  </section>
+
+  <section id="shop" class="hidden">
+    <div class="row"><h1 class="brand"><svg class="logo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><g fill="currentColor"><rect class="paper" x="22" y="3" width="20" height="14" rx="2"/><rect x="12" y="14" width="40" height="12" rx="3"/><path d="M7 29h50l5 24a4 4 0 0 1-4 5H6a4 4 0 0 1-4-5z"/></g><g fill="var(--bg)"><rect x="18" y="18" width="28" height="4" rx="1.5"/><circle cx="18" cy="38" r="3"/><circle cx="32" cy="38" r="3"/><circle cx="46" cy="38" r="3"/><circle cx="18" cy="48" r="3"/><circle cx="32" cy="48" r="3"/><rect x="41" y="45" width="10" height="6" rx="2"/></g></svg>Kasir</h1><button class="link" id="toMenu">Menu</button></div>
+    <div class="tabs" style="grid-template-columns:repeat(3,1fr)"><button id="tabA" class="on">Barang</button><button id="tabS">Scan</button><button id="tabB">Nominal</button></div>
+    <div id="paneA"><input type="search" id="q" placeholder="Cari barang atau kelompok" aria-label="Cari barang"><div class="chips" id="chips"></div><div class="grid" id="grid"></div></div>
+    <div id="paneS" class="hidden">
+      <button class="go" id="scanGo" style="margin-top:0">Buka kamera, scan produk</button>
+      <p style="margin-top:10px">Arahkan kamera ke barcode di kemasan. Barang masuk keranjang otomatis. Scanner USB atau Bluetooth juga bisa dipakai lewat kolom di bawah.</p>
+      <div style="display:flex;gap:8px"><input type="text" id="scode" placeholder="Ketik atau scan kode, lalu Enter" style="flex:1" autocomplete="off"><button class="go alt" id="scodeGo" style="width:auto;margin:0 0 8px;padding:0 16px;height:auto;font-size:14px">Tambah</button></div>
+      <p id="smsg"></p>
+    </div>
+    <div id="paneB" class="hidden">
+      <div class="amount" id="amt"></div>
+      <div class="pad" id="pad"></div>
+      <button class="go alt" id="addFree" style="margin-top:0">Tambah ke keranjang</button>
+    </div>
+    <div class="cart" id="cart"></div>
+    <div class="cart" id="discBox" style="margin:12px 0 0;padding:10px 14px">
+      <div class="row" style="margin:0"><b id="discTitle">Diskon</b><button class="link" id="discToggle">Atur</button></div>
+      <div id="discPanel" class="hidden" style="padding-bottom:6px">
+        <div class="tabs" style="margin:8px 0"><button id="dtFlat" class="on">Rp</button><button id="dtPct">Persen</button></div>
+        <input type="number" id="dval" inputmode="decimal" min="0" placeholder="Besar diskon" style="margin-bottom:8px">
+        <div class="quick" id="dquick"><button data-p="5">5%</button><button data-p="10">10%</button><button data-p="15">15%</button><button data-p="0">Hapus</button></div>
+      </div>
+    </div>
+    <input type="text" id="note" placeholder="Catatan untuk struk (opsional)" style="margin-top:12px">
+    <div class="tabs"><button id="stPaid" class="on">Dibayar</button><button id="stUnpaid">Belum dibayar</button></div>
+    <input type="text" id="cname" class="hidden" placeholder="Nama pelanggan (wajib untuk utang)">
+    <button class="go" id="pay" disabled>Bayar QRIS</button>
+    <button class="go alt" id="payCash" disabled>Bayar tunai</button>
+    <button class="go hidden" id="payDebt" disabled>Catat sebagai utang</button>
+  </section>
+
+  <section id="items" class="hidden">
+    <div class="row"><h1>Kelola barang</h1><button class="link" id="itemsDone">Selesai</button></div>
+    <input type="text" id="store" placeholder="Nama toko (tampil di struk)">
+    <input type="text" id="iname" placeholder="Nama barang">
+    <input type="number" id="iprice" inputmode="numeric" placeholder="Harga (Rp)" min="0">
+    <input type="text" id="igroup" list="glist" placeholder="Kelompok (opsional, mis. Top Up Pulsa)"><datalist id="glist"></datalist>
+    <div style="display:flex;gap:8px"><input type="text" id="icode" placeholder="Kode barcode (opsional)" style="flex:1" autocomplete="off"><button class="go alt" id="iscan" style="width:auto;margin:0 0 8px;padding:0 16px;height:auto;font-size:14px">Scan</button></div>
+    <button class="go" id="iadd" style="margin-top:0">Tambah barang</button>
+    <p id="cmsg" class="err" style="margin-top:8px"></p>
+    <div style="margin:20px 0 6px"><b>Impor dari spreadsheet</b></div>
+    <p>Kolom A nama barang, kolom B harga, kolom C kelompok (boleh kosong), kolom D kode barcode (boleh kosong). Kalau kosong, kelompok diambil otomatis dari nama tanpa angka di belakangnya, misalnya "Top Up Pulsa 5.000" masuk kelompok "Top Up Pulsa". Barang dengan nama yang sama akan diperbarui.</p>
+    <input id="ifile" type="file" accept=".xlsx,.xls,.csv,.txt" style="margin-bottom:10px">
+    <textarea id="itext" placeholder="Atau tempel dari spreadsheet:&#10;Kopi susu&#9;18000&#10;Roti bakar&#9;15000"></textarea>
+    <label style="display:block;margin:4px 0 8px;font-size:14px"><input type="checkbox" id="replace" style="width:auto;margin:0 6px 0 0">Ganti seluruh katalog</label>
+    <button class="go alt" id="ipaste" style="margin-top:0">Impor dari teks tempelan</button>
+    <p id="imsg" style="margin-top:10px"></p>
+    <input type="search" id="iq" placeholder="Cari di daftar barang" aria-label="Cari di daftar barang" style="margin-top:12px">
+    <div id="ilist" style="margin-top:4px"></div>
+  </section>
+
+  <section id="settings" class="hidden">
+    <div class="row"><h1>Pengaturan</h1><button class="link" id="setDone">Selesai</button></div>
+    <div style="font-weight:800;margin:0 0 10px">Warna aplikasi</div>
+    <div class="swatches" id="swatches"><button data-ac="biru" style="--sw:#0b57d0;--sw2:#3b8bf5" aria-label="Biru"></button><button data-ac="hijau" style="--sw:#0f8a5f;--sw2:#3fc38b" aria-label="Hijau"></button><button data-ac="ungu" style="--sw:#6b3fd4;--sw2:#a06cf0" aria-label="Ungu"></button><button data-ac="oranye" style="--sw:#d9560b;--sw2:#f59f00" aria-label="Oranye"></button><button data-ac="merah" style="--sw:#c62839;--sw2:#f0607a" aria-label="Merah"></button><button data-ac="teal" style="--sw:#0b7285;--sw2:#22b8cf" aria-label="Teal"></button></div>
+    <div class="cart" style="margin-top:0;padding:14px">
+      <label style="display:flex;gap:10px;align-items:center;font-weight:700;margin-bottom:14px"><input type="checkbox" id="fon" style="width:20px;height:20px;margin:0">Tambah biaya admin di setiap transaksi</label>
+      <label class="cap" for="flabel">Nama di struk</label>
+      <input type="text" id="flabel" placeholder="Biaya admin">
+      <label class="cap" for="ftype">Jenis biaya</label>
+      <select id="ftype"><option value="flat">Nominal tetap (Rp)</option><option value="pct">Persen dari total (%)</option></select>
+      <label class="cap" for="fval">Besar biaya</label>
+      <input type="number" id="fval" inputmode="decimal" min="0" placeholder="Contoh: 2000">
+      <label class="cap" for="fapply">Berlaku untuk</label>
+      <select id="fapply"><option value="all">Semua metode bayar</option><option value="qris">Hanya QRIS</option><option value="tunai">Hanya tunai</option></select>
+      <p id="fnote" style="margin:6px 0 0"></p>
+    </div>
+    <p style="margin-top:12px">Biaya dihitung satu kali per transaksi, bukan per barang. Perubahan tersimpan otomatis. QRIS yang dibuat sudah memakai total termasuk biaya admin.</p>
+  </section>
+
+  <section id="menu" class="hidden">
+    <div class="row"><h1>Menu</h1><button class="link" id="menuBack">Kembali</button></div>
+    <div class="mgrid">
+      <button class="mc" id="toRecap" style="--i:0">Rekap harian</button>
+      <button class="mc" id="toPend" style="--i:0">Cek bayar</button>
+      <button class="mc" id="toDebt" style="--i:1">Utang</button>
+      <button class="mc" id="toHist" style="--i:2">Riwayat</button>
+      <button class="mc" id="toItems" style="--i:3">Barang</button>
+      <button class="mc" id="toExport" style="--i:9">Ekspor katalog</button>
+      <button class="mc" id="toBackup" style="--i:4">Cadangan</button>
+      <button class="mc" id="toSet" style="--i:5">Pengaturan</button>
+      <button class="mc" id="toPrinter" style="--i:6">Printer</button>
+      <button class="mc" id="change" style="--i:7">Ganti QRIS</button>
+    </div>
+  </section>
+
+  <section id="printer" class="hidden">
+    <div class="row"><h1>Printer</h1><button class="link" id="prBack">Kembali</button></div>
+    <label class="cap">Lebar kertas</label>
+    <div class="tabs"><button id="pw58">58 mm</button><button id="pw80">80 mm</button></div>
+    <label class="cap">Cara mencetak</label>
+    <div class="tabs" id="pmodes" style="grid-template-columns:1fr"><button data-m="rawbt">RawBT (disarankan)</button><button data-m="ble">Bluetooth langsung</button><button data-m="sys">Cetak biasa (dialog Android)</button></div>
+    <p id="pmhelp"></p>
+    <label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-size:14px"><input type="checkbox" id="pauto" style="width:auto;margin:0">Cetak otomatis setelah struk dibuat</label>
+    <button class="go hidden" id="prPair" style="margin-top:0">Sambungkan printer Bluetooth</button>
+    <button class="go alt" id="prTest">Cetak tes</button>
+    <p id="prMsg" style="margin-top:10px"></p>
+  </section>
+
+  <section id="recap" class="hidden">
+    <div class="row"><h1>Rekap harian</h1><button class="link" id="rcBack">Kembali</button></div>
+    <div class="rdate"><button id="rcPrev" aria-label="Hari sebelumnya">&#8249;</button><input type="date" id="rcDate" aria-label="Tanggal rekap"><button id="rcNext" aria-label="Hari berikutnya">&#8250;</button></div>
+    <div class="cart" id="rcSum" style="margin-top:0"></div>
+    <div class="bars" id="rcBars"></div>
+    <div class="cart" id="rcItems" style="margin-top:0"></div>
+    <button class="go" id="rcPrint">Cetak rekap</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="go alt" id="rcCopy" style="margin:0;height:52px;font-size:14px">Salin rekap</button><button class="go alt" id="rcShare" style="margin:0;height:52px;font-size:14px">Bagikan rekap</button></div>
+    <p id="rcMsg" style="margin-top:10px"></p>
+  </section>
+
+  <section id="export" class="hidden">
+    <div class="row"><h1>Ekspor katalog</h1><button class="link" id="exBack">Kembali</button></div>
+    <div class="cart" id="exSum" style="margin-top:0"></div>
+    <p style="margin-top:12px">Simpan daftar barang ke spreadsheet. Kalau aplikasi ter-reset, file ini bisa dimasukkan lagi lewat Menu, Barang, Impor dari spreadsheet. Kolomnya: nama barang, harga, kelompok, kode barcode.</p>
+    <button class="go" id="exXlsx" style="margin-top:0">Unduh Excel (.xlsx)</button>
+    <button class="go alt" id="exCsv">Unduh CSV</button>
+    <button class="go alt" id="exCopy">Salin tabel (tempel ke Google Sheets)</button>
+    <p id="exMsg" style="margin-top:10px"></p>
+    <button class="link" id="exBk">Cadangan lengkap, semua data</button>
+  </section>
+
+  <section id="debt" class="hidden">
+    <div class="row"><h1>Utang</h1><button class="link" id="debtBack">Kembali</button></div>
+    <div class="cart" id="dsum"></div>
+    <div id="dlist" style="margin-top:12px"></div>
+  </section>
+
+  <section id="backup" class="hidden">
+    <div class="row"><h1>Cadangan</h1><button class="link" id="bkBack">Kembali</button></div>
+    <p>Simpan cadangan supaya katalog, pengaturan, QRIS, riwayat, dan utang bisa dipulihkan kalau aplikasi ter-reset. Cadangan terakhir: <b id="bkLast">belum pernah</b></p>
+    <button class="go" id="bkDl" style="margin-top:0">Unduh file cadangan</button>
+    <button class="go alt" id="bkCopy">Salin cadangan sebagai teks</button>
+    <div style="margin:22px 0 6px"><b>Pulihkan</b></div>
+    <p>Pilih file cadangan (.json) atau tempel teksnya. Data yang ada sekarang akan diganti.</p>
+    <input id="bkFile" type="file" accept=".json,application/json" style="margin-bottom:10px">
+    <textarea id="bkText" placeholder="Tempel teks cadangan di sini"></textarea>
+    <button class="go alt" id="bkRestore" style="margin-top:0">Pulihkan dari teks</button>
+    <p id="bkMsg" style="margin-top:10px"></p>
+  </section>
+
+  <section id="pending" class="hidden">
+    <div class="row"><h1>Cek pembayaran</h1><button class="link" id="pendBack">Kembali</button></div>
+    <p>Aplikasi ini tidak bisa mengecek sendiri apakah uang sudah masuk. Cocokkan nominal dan jamnya dengan notifikasi atau mutasi di aplikasi penerima QRIS kamu, lalu tandai di sini.</p>
+    <div id="plist"></div>
+  </section>
+
+  <section id="hist" class="hidden">
+    <div class="row"><h1>Riwayat hari ini</h1><button class="link" id="histBack">Kembali</button></div>
+    <div class="cart" id="hsum"></div>
+    <div id="hlist" style="margin-top:12px"></div>
+    <p id="hmsg" style="margin-top:8px"></p>
+    <div id="hpv"></div>
+    <button class="go alt" id="hcsv">Salin semua transaksi</button>
+    <button class="go alt" id="hdl">Unduh file CSV</button>
+    <button class="go alt" id="hclear" style="color:var(--danger)">Hapus riwayat</button>
+  </section>
+
+  <section id="cash" class="hidden">
+    <div class="row"><h1>Bayar tunai</h1><button class="link" id="cashBack">Kembali</button></div>
+    <div class="total" id="ctot"></div>
+    <div class="amount" id="camt"></div>
+    <div class="quick" id="quick"></div>
+    <div class="pad" id="cpad"></div>
+    <div class="total" id="chg" style="font-size:22px;min-height:34px"></div>
+    <button class="go" id="cashOk" disabled>Terima tunai</button>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="total" id="tot"></div>
+    <p style="text-align:center">Minta pembeli scan dengan aplikasi pembayaran apa pun.</p>
+    <div class="qrbox"><div id="qr"></div></div>
+    <button class="go" id="paid">Pembayaran diterima</button>
+    <button class="go alt" id="hold">Simpan, konfirmasi nanti</button>
+    <button class="go alt" id="back">Kembali ke keranjang</button>
+  </section>
+
+  <section id="receipt" class="hidden">
+    <div class="row"><h1>Struk</h1></div>
+    <div class="okmark" id="okmark"><svg viewBox="0 0 52 52" width="60" height="60" aria-hidden="true"><circle class="oc" cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="3"/><path class="ok" id="okp" d="M15 27l8 8 14-16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="receipt" id="rtext"></div>
+    <button class="go" id="prnt">Cetak struk</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><p id="prsum" style="margin:0"></p><button class="link" id="prSet">Ubah printer</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="go alt" id="shImg" style="margin:0;height:50px;font-size:15px">Bagikan foto</button><button class="go alt" id="share" style="margin:0;height:50px;font-size:15px">Bagikan teks</button></div>
+    <button class="go alt" id="copy">Salin teks struk</button>
+    <button class="go alt" id="next">Transaksi baru</button>
+    <p id="prmsg" style="margin-top:10px"></p>
+    <div id="shpv"></div>
+  </section>
+</main>
+<div id="scov" class="hidden"><div class="scb">
+  <video id="scv" playsinline muted></video><div class="scf"></div><div id="scmsg"></div>
+</div><div class="scbar"><span id="sctot"></span><button class="go alt" id="screg" style="display:none;color:#fff;border-color:#fff">Daftarkan</button><button class="go" id="scdone">Selesai</button></div></div>
+<div id="lblov" class="hidden"><div class="lbb"><div id="lbq" style="background:#fff;padding:12px;display:inline-block;border-radius:8px"></div><p style="margin:10px 0 0;color:var(--ink)"><b id="lbn"></b><br><span id="lbp"></span></p><p>Screenshot label ini, cetak, lalu tempel di produk.</p><button class="go" id="lbx" style="margin-top:0">Tutup</button></div></div>
+<div id="pa"></div>
+<style id="pgs"></style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const SCREENS = ["setup","shop","items","settings","menu","printer","recap","export","debt","backup","pending","hist","cash","result","receipt"];
+let staticQris = "", amount = "", cart = [], items = [], storeName = "", lastReceipt = "", payInfo = {m: "qris"}, cashStr = "", trx = [], curGroup = "", query = "", fee = {on: false, type: "flat", val: 0, apply: "all", label: "Biaya admin"}, pend = [], fromPend = false, debts = [], rStatus = "paid", pcfg = {w: 58, mode: "rawbt", auto: false};
+
+function save(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function load(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmt(n){ return Number(n || 0).toLocaleString("id-ID"); }
+function show(id){ SCREENS.forEach(x => $(x).classList.toggle("hidden", x !== id)); window.scrollTo(0, 0); }
+const gross = () => cart.reduce((s, c) => s + c.price * c.qty, 0);
+let disc = {type: "flat", val: 0};
+function discAmt(){
+  const g = gross(); if (!(disc.val > 0) || g <= 0) return 0;
+  const d = disc.type === "pct" ? Math.round(g * Math.min(disc.val, 100) / 100) : Math.round(disc.val);
+  return Math.min(d, g);
+}
+const total = () => gross() - discAmt();
+function feeFor(m){
+  const t = total();
+  if (!fee.on || t <= 0 || !(fee.val > 0)) return 0;
+  if (fee.apply !== "all" && fee.apply !== m) return 0;
+  return fee.type === "pct" ? Math.round(t * fee.val / 100) : Math.round(fee.val);
+}
+const grand = m => total() + feeFor(m);
+const autoGroup = n => { const s = String(n).replace(/[\s\d.,]+(rb|k|ribu)?$/i, "").trim(); return s && s !== String(n).trim() ? s : "Lainnya"; };
+const grp = it => it.group || autoGroup(it.name);
+
+/* ---------- QRIS ---------- */
+function crc16(s){
+  let c = 0xFFFF;
+  for (let i = 0; i < s.length; i++){
+    c ^= s.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+  }
+  return c.toString(16).toUpperCase().padStart(4, "0");
+}
+function parseTLV(s){
+  const out = []; let i = 0;
+  while (i + 4 <= s.length){
+    const len = parseInt(s.substr(i + 2, 2), 10);
+    if (isNaN(len)) throw new Error("bad");
+    out.push([s.substr(i, 2), s.substr(i + 4, len)]); i += 4 + len;
+  }
+  return out;
+}
+function validQris(s){
+  s = (s || "").trim();
+  return s.length > 30 && s.startsWith("000201") && crc16(s.slice(0, -4)) === s.slice(-4).toUpperCase();
+}
+function toDynamic(s, amt){
+  const tags = parseTLV(s.trim().slice(0, -8)).filter(t => t[0] !== "54" && t[0] !== "63");
+  tags.forEach(t => { if (t[0] === "01") t[1] = "12"; });
+  const pos = tags.findIndex(t => t[0] > "54");
+  tags.splice(pos < 0 ? tags.length : pos, 0, ["54", String(amt)]);
+  const body = tags.map(t => t[0] + String(t[1].length).padStart(2, "0") + t[1]).join("") + "6304";
+  return body + crc16(body);
+}
+
+/* ---------- Shop ---------- */
+function feeLines(){
+  const q = feeFor("qris"), c = feeFor("tunai"), same = q === c, L = esc(fee.label || "Biaya admin");
+  let h = discAmt() ? `<div class="line"><span style="color:#2b9348">Diskon${disc.type === "pct" ? " " + disc.val + "%" : ""}</span><span></span><b style="color:#2b9348">-${fmt(discAmt())}</b></div>` : "";
+  if (same && q) h += `<div class="line"><span>${L}</span><span></span><b>${fmt(q)}</b></div>`;
+  else {
+    if (q) h += `<div class="line"><span>${L} (QRIS)</span><span></span><b>${fmt(q)}</b></div>`;
+    if (c) h += `<div class="line"><span>${L} (tunai)</span><span></span><b>${fmt(c)}</b></div>`;
+  }
+  const label = same ? "Total" : "Subtotal";
+  return h + `<div class="line"><b>${label}</b><span></span><b>Rp ${fmt(total() + (same ? q : 0))}</b></div>`;
+}
+function drawGrid(){
+  if (!items.length){ $("chips").innerHTML = ""; $("grid").innerHTML = `<p style="grid-column:1/-1">Belum ada barang. Buka Barang untuk menambah, atau pakai Nominal bebas.</p>`; return; }
+  const names = []; items.forEach(it => { const g = grp(it); if (!names.includes(g)) names.push(g); });
+  if (curGroup && !names.includes(curGroup)) curGroup = "";
+  $("chips").innerHTML = names.length > 1 ? [""].concat(names).map(g => `<button data-g="${esc(g)}" class="${g === curGroup ? "on" : ""}">${g ? esc(g) : "Semua"}</button>`).join("") : "";
+  const q = query.trim().toLowerCase();
+  const list = items.filter(it => (!curGroup || grp(it) === curGroup) && (!q || it.name.toLowerCase().includes(q) || grp(it).toLowerCase().includes(q)))
+    .sort((a, b) => names.indexOf(grp(a)) - names.indexOf(grp(b)));
+  if (!list.length){ $("grid").innerHTML = `<p style="grid-column:1/-1">Tidak ada barang yang cocok.</p>`; return; }
+  let html = "", last = null;
+  list.forEach(it => {
+    const g = grp(it);
+    if (!curGroup && names.length > 1 && g !== last){ html += `<h2 class="gh">${esc(g)}</h2>`; last = g; }
+    const c = cart.find(x => x.key === it.id);
+    html += `<button class="item" data-id="${it.id}"><b>${esc(it.name)}</b><span>Rp ${fmt(it.price)}</span>${c ? `<i>${c.qty}</i>` : ""}</button>`;
+  });
+  $("grid").innerHTML = html;
+}
+$("q").oninput = e => { query = e.target.value; drawGrid(); };
+$("chips").onclick = e => { const b = e.target.closest("button[data-g]"); if (!b) return; curGroup = b.dataset.g; drawGrid(); };
+function drawShop(){
+  drawGrid();
+  $("cart").innerHTML = cart.length ? cart.map(c => `<div class="line"><div>${esc(c.name)}<small>Rp ${fmt(c.price)}</small></div>
+    <div class="qty"><button data-k="${c.key}" data-d="-1" aria-label="Kurangi">−</button><b>${c.qty}</b><button data-k="${c.key}" data-d="1" aria-label="Tambah">+</button></div>
+    <b>${fmt(c.price * c.qty)}</b></div>`).join("") + `${feeLines()}`
+    : `<p style="margin:14px 0">Keranjang kosong. Ketuk barang untuk menambahkan.</p>`;
+  $("pay").disabled = total() <= 0;
+  $("payCash").disabled = total() <= 0;
+  $("payDebt").disabled = total() <= 0;
+  $("pay").textContent = total() > 0 ? "Bayar QRIS · Rp " + fmt(grand("qris")) : "Bayar QRIS";
+  $("payCash").textContent = total() > 0 ? "Bayar tunai · Rp " + fmt(grand("tunai")) : "Bayar tunai";
+}
+function add(key, name, price){
+  const c = cart.find(x => x.key === key);
+  c ? c.qty++ : cart.push({key, name, price, qty: 1});
+  drawShop();
+}
+$("grid").onclick = e => {
+  const b = e.target.closest(".item"); if (!b) return;
+  const it = items.find(x => x.id === b.dataset.id); if (it) add(it.id, it.name, it.price);
+};
+$("cart").onclick = e => {
+  const b = e.target.closest("button[data-k]"); if (!b) return;
+  const c = cart.find(x => x.key === b.dataset.k); if (!c) return;
+  c.qty += Number(b.dataset.d);
+  if (c.qty <= 0) cart = cart.filter(x => x !== c);
+  drawShop();
+};
+function tab(a){
+  const k = a === true ? "A" : a === false ? "B" : a;
+  ["A", "S", "B"].forEach(x => { $("pane" + x).classList.toggle("hidden", k !== x); $("tab" + x).classList.toggle("on", k === x); });
+}
+$("tabA").onclick = () => tab("A"); $("tabS").onclick = () => tab("S"); $("tabB").onclick = () => tab("B");
+
+["1","2","3","4","5","6","7","8","9","000","0","⌫"].forEach(k => {
+  const b = document.createElement("button"); b.textContent = k;
+  b.setAttribute("aria-label", k === "⌫" ? "Hapus" : k);
+  b.onclick = () => {
+    if (k === "⌫") amount = amount.slice(0, -1);
+    else if ((amount + k).length <= 9) amount = (amount + k).replace(/^0+/, "");
+    drawAmt();
+  };
+  $("pad").appendChild(b);
+});
+function drawAmt(){ $("amt").innerHTML = "<small>Rp</small>" + fmt(amount); }
+$("addFree").onclick = () => {
+  if (Number(amount) > 0){ add("f" + amount, "Nominal bebas", Number(amount)); amount = ""; drawAmt(); }
+};
+
+/* ---------- Pay & receipt ---------- */
+$("pay").onclick = () => {
+  $("qr").innerHTML = "";
+  new QRCode($("qr"), {text: toDynamic(staticQris, grand("qris")), width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M});
+  $("tot").textContent = "Rp " + fmt(grand("qris"));
+  show("result");
+};
+/* Tunai */
+function drawCash(){
+  const p = Number(cashStr || 0), t = grand("tunai");
+  $("camt").innerHTML = "<small>Diterima Rp</small>" + fmt(p);
+  $("chg").textContent = p >= t ? "Kembalian Rp " + fmt(p - t) : (p > 0 ? "Kurang Rp " + fmt(t - p) : "");
+  $("cashOk").disabled = p < t;
+}
+["1","2","3","4","5","6","7","8","9","000","0","⌫"].forEach(k => {
+  const b = document.createElement("button"); b.textContent = k;
+  b.setAttribute("aria-label", k === "⌫" ? "Hapus" : k);
+  b.onclick = () => {
+    if (k === "⌫") cashStr = cashStr.slice(0, -1);
+    else if ((cashStr + k).length <= 9) cashStr = (cashStr + k).replace(/^0+/, "");
+    drawCash();
+  };
+  $("cpad").appendChild(b);
+});
+$("payCash").onclick = () => {
+  cashStr = "";
+  $("ctot").textContent = "Total Rp " + fmt(grand("tunai"));
+  $("quick").innerHTML = "";
+  [["Uang pas", grand("tunai")], ["20.000", 20000], ["50.000", 50000], ["100.000", 100000]].forEach(([l, v]) => {
+    const b = document.createElement("button"); b.textContent = l;
+    b.onclick = () => { cashStr = String(v); drawCash(); };
+    $("quick").appendChild(b);
+  });
+  drawCash(); show("cash");
+};
+$("cashBack").onclick = () => show("shop");
+$("cashOk").onclick = () => {
+  const p = Number(cashStr || 0);
+  payInfo = {m: "tunai", paid: p, change: p - grand("tunai")};
+  makeReceipt();
+};
+$("back").onclick = () => show("shop");
+function makeReceipt(at, noteArg){
+  const n = (Number(load("no")) || 0) + 1; save("no", n);
+  const d = at ? new Date(at) : new Date();
+  const nt = noteArg != null ? noteArg : $("note").value.trim();
+  const tgl = d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
+  const jam = d.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZoneName:"short"}).replace(/\./g, ":");
+  const L = [];
+  L.push((storeName || "Struk Pembayaran").toUpperCase(), "No. " + String(n).padStart(4, "0"), "Tanggal: " + tgl, "Waktu  : " + jam, "--------------------------------");
+  cart.forEach(c => { L.push(c.name, "  " + c.qty + " x " + fmt(c.price) + "   Rp " + fmt(c.qty * c.price)); });
+  const f = payInfo.fixedFee != null ? payInfo.fixedFee : feeFor(payInfo.m), gt = total() + f;
+  L.push("--------------------------------");
+  const da = discAmt();
+  if (da) L.push("Subtotal Rp " + fmt(gross()), "Diskon" + (disc.type === "pct" ? " " + disc.val + "%" : "") + "  -Rp " + fmt(da));
+  if (f) L.push((da ? "Setelah diskon Rp " : "Subtotal Rp ") + fmt(total()), (fee.label || "Biaya admin") + " Rp " + fmt(f));
+  L.push("TOTAL    Rp " + fmt(gt));
+  if (payInfo.m === "tunai") L.push("Tunai    Rp " + fmt(payInfo.paid), "Kembali  Rp " + fmt(payInfo.change), "Dibayar tunai (LUNAS)");
+  else if (payInfo.m === "utang") L.push("STATUS   : BELUM DIBAYAR", "Pelanggan: " + payInfo.name);
+  else L.push("Dibayar via QRIS (LUNAS)");
+  if (nt) L.push("", "Catatan: " + nt);
+  if (payInfo.ref) L.push("Pelunasan utang No. " + String(payInfo.ref).padStart(4, "0") + " a.n. " + payInfo.name);
+  L.push("", "Terima kasih");
+  lastReceipt = L.join("\n");
+  trx.push({no: n, t: d.toISOString(), m: payInfo.m, fee: f, disc: da, total: gt, txt: lastReceipt, name: payInfo.name || "", ref: payInfo.ref || 0, items: cart.map(c => [c.name, c.qty, c.price])});
+  if (payInfo.m === "utang"){ debts.push({id: Date.now(), no: n, t: d.toISOString(), name: payInfo.name, total: gt, fee: f, cart: JSON.parse(JSON.stringify(cart)), dsc: JSON.parse(JSON.stringify(disc)), note: nt}); save("debts", JSON.stringify(debts)); drawPendBtn(); }
+  if (trx.length > 1000) trx = trx.slice(-1000);
+  save("trx", JSON.stringify(trx));
+  $("rtext").textContent = lastReceipt;
+  $("prsum").textContent = prSummary(); $("shpv").innerHTML = "";
+  const un = payInfo.m === "utang";
+  $("okmark").classList.toggle("warn", un); $("okp").setAttribute("d", un ? "M26 13v14l9 6" : "M15 27l8 8 14-16");
+  $("prmsg").textContent = "";
+  if (!un) setTimeout(burst, 350);
+  if (pcfg.auto) doPrint(lastReceipt, "prmsg");
+  show("receipt");
+}
+$("paid").onclick = () => { payInfo = {m: "qris"}; makeReceipt(); };
+$("share").onclick = async () => {
+  try { if (navigator.share) await navigator.share({text: lastReceipt}); else throw new Error("noshare"); }
+  catch(e){
+    if (e && e.name === "AbortError") return;
+    try { await navigator.clipboard.writeText(lastReceipt); $("prmsg").textContent = "Berbagi tidak didukung di sini, jadi teks struk disalin. Tempel di WhatsApp atau pesan."; }
+    catch(e2){ $("prmsg").textContent = "Gagal membagikan. Pakai Salin teks struk."; }
+  }
+};
+$("shImg").onclick = () => shareImage(lastReceipt, "prmsg", "shpv");
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(lastReceipt); $("copy").textContent = "Tersalin"; }
+  catch(e){ $("copy").textContent = "Tekan lama teks struk untuk menyalin"; }
+  setTimeout(() => $("copy").textContent = "Salin teks struk", 2000);
+};
+$("next").onclick = () => {
+  if (fromPend){ const w = fromPend; fromPend = false; if (w === "debt"){ drawDebt(); show("debt"); } else { drawPend(); show("pending"); } return; }
+  cart = []; amount = ""; $("note").value = ""; $("cname").value = ""; setStatus("paid"); disc = {type: "flat", val: 0}; drawDisc();
+  drawAmt(); drawShop(); show("shop");
+};
+
+/* ---------- Catalog ---------- */
+function drawItems(){
+  const gs = []; items.forEach(it => { const g = grp(it); if (!gs.includes(g)) gs.push(g); });
+  $("glist").innerHTML = gs.map(g => `<option value="${esc(g)}">`).join("");
+  const q = ($("iq").value || "").trim().toLowerCase();
+  const list = items.filter(it => !q || it.name.toLowerCase().includes(q) || grp(it).toLowerCase().includes(q));
+  $("ilist").innerHTML = !items.length ? `<p>Belum ada barang.</p>` : !list.length ? `<p>Tidak ada yang cocok.</p>` :
+    list.slice(0, 100).map(it => `<div class="mrow" style="align-items:flex-start;gap:8px"><span style="flex:1">${esc(it.name)}<br><small style="color:var(--muted)">Rp ${fmt(it.price)}${it.code ? ", kode " + esc(it.code) : ""}</small><input type="text" list="glist" data-gid="${it.id}" value="${esc(grp(it))}" aria-label="Kelompok" style="margin:6px 0 0;padding:8px"></span><span style="display:flex;flex-direction:column;align-items:flex-end"><button data-sc="${it.id}" style="color:var(--accent)">${it.code ? "Ubah kode" : "Scan kode"}</button><button data-lb="${it.id}" style="color:var(--accent)">Label</button><button data-id="${it.id}">Hapus</button></span></div>`).join("") + (list.length > 100 ? `<p>Menampilkan 100 dari ${list.length}. Persempit dengan pencarian.</p>` : "");
+}
+$("toItems").onclick = () => { $("store").value = storeName; drawItems(); show("items"); };
+$("itemsDone").onclick = () => { storeName = $("store").value.trim(); save("store", storeName); drawShop(); show("shop"); };
+$("iadd").onclick = () => {
+  const name = $("iname").value.trim(), price = Math.round(Number($("iprice").value));
+  if (!name || !(price > 0)) return;
+  const code = $("icode").value.trim();
+  if (code && findByCode(code)){ $("cmsg").textContent = "Kode itu sudah dipakai barang " + findByCode(code).name + "."; return; }
+  $("cmsg").textContent = "";
+  items.push({id: "i" + Date.now(), name, price, group: $("igroup").value.trim(), code}); save("items", JSON.stringify(items));
+  $("iname").value = ""; $("iprice").value = ""; $("icode").value = ""; drawItems();
+};
+$("iq").oninput = drawItems;
+$("ilist").onchange = e => {
+  const i = e.target.closest("input[data-gid]"); if (!i) return;
+  const it = items.find(x => x.id === i.dataset.gid); if (!it) return;
+  it.group = i.value.trim(); save("items", JSON.stringify(items)); drawShop();
+};
+$("ilist").onclick = e => {
+  const sc = e.target.closest("button[data-sc]"); if (sc){ openScan("item:" + sc.dataset.sc); return; }
+  const lb = e.target.closest("button[data-lb]"); if (lb){ showLabel(lb.dataset.lb); return; }
+  const b = e.target.closest("button[data-id]"); if (!b) return;
+  items = items.filter(x => x.id !== b.dataset.id); cart = cart.filter(c => c.key !== b.dataset.id);
+  save("items", JSON.stringify(items)); drawItems();
+};
+
+/* ---------- Cek pembayaran ---------- */
+function drawPendBtn(){
+  $("toPend").textContent = pend.length ? "Cek bayar (" + pend.length + ")" : "Cek bayar";
+  $("toDebt").textContent = debts.length ? "Utang (" + debts.length + ")" : "Utang";
+  const k = pend.length + debts.length; $("toMenu").textContent = k ? "Menu (" + k + ")" : "Menu";
+}
+function drawPend(){
+  drawPendBtn();
+  $("plist").innerHTML = pend.length ? pend.slice().reverse().map(p => {
+    const tm = new Date(p.t).toLocaleTimeString("id-ID", {hour: "2-digit", minute: "2-digit"});
+    const nm = p.cart.map(c => c.qty + "x " + esc(c.name)).join(", ");
+    return `<div class="cart" style="margin:0 0 12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:20px">Rp ${fmt(p.total)}</b><span style="color:var(--muted)">${tm}</span></div><p style="margin:6px 0 10px">${nm}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="go" style="height:46px;margin:0;font-size:15px" data-ok="${p.id}">Sudah masuk</button><button class="go alt" style="height:46px;margin:0;font-size:15px" data-no="${p.id}">Batalkan</button></div></div>`;
+  }).join("") : "<p>Tidak ada transaksi yang menunggu konfirmasi.</p>";
+}
+$("hold").onclick = () => {
+  if (!cart.length) return;
+  pend.push({id: Date.now(), t: new Date().toISOString(), cart: JSON.parse(JSON.stringify(cart)), total: grand("qris"), note: $("note").value.trim(), disc: JSON.parse(JSON.stringify(disc))});
+  disc = {type: "flat", val: 0}; drawDisc();
+  $("note").value = "";
+  save("pend", JSON.stringify(pend));
+  cart = []; amount = ""; drawAmt(); drawShop(); drawPendBtn(); show("shop");
+};
+$("toPend").onclick = () => { drawPend(); show("pending"); };
+$("pendBack").onclick = () => show("shop");
+let armNo = "";
+$("plist").onclick = e => {
+  const ok = e.target.closest("[data-ok]"), no = e.target.closest("[data-no]");
+  if (ok){
+    const p = pend.find(x => String(x.id) === ok.dataset.ok); if (!p) return;
+    pend = pend.filter(x => x !== p); save("pend", JSON.stringify(pend));
+    const keep = cart, kd = disc; cart = p.cart; disc = p.disc || {type: "flat", val: 0}; payInfo = {m: "qris"};
+    makeReceipt(p.t, p.note || "");
+    cart = keep; disc = kd; fromPend = true; drawPendBtn();
+  } else if (no){
+    if (armNo !== no.dataset.no){ armNo = no.dataset.no; no.textContent = "Yakin batalkan?"; return; }
+    pend = pend.filter(x => String(x.id) !== no.dataset.no); armNo = "";
+    save("pend", JSON.stringify(pend)); drawPend();
+  }
+};
+
+/* ---------- Foto struk ---------- */
+const prSummary = () => ({rawbt: "RawBT", ble: "Bluetooth langsung", sys: "Cetak biasa"}[pcfg.mode] || "") + ", kertas " + pcfg.w + " mm";
+function receiptCanvas(text){
+  const lines = text.split("\n"), fs = 22, lh = 32, pad = 30, font = fs + "px ui-monospace, Menlo, Consolas, monospace";
+  const m = document.createElement("canvas").getContext("2d"); m.font = font;
+  const W = Math.ceil(Math.max(360, ...lines.map(l => m.measureText(l).width)) + pad * 2), H = lines.length * lh + pad * 2;
+  const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H * 2;
+  const x = cv.getContext("2d"); x.scale(2, 2);
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.fillStyle = "#111"; x.textBaseline = "middle";
+  lines.forEach((l, i) => {
+    const y = pad + i * lh + lh / 2;
+    if (i === 0){ x.font = "700 " + font; x.textAlign = "center"; x.fillText(l, W / 2, y); x.font = font; x.textAlign = "left"; }
+    else { x.font = font; x.fillText(l, pad, y); }
+  });
+  return cv;
+}
+async function shareImage(text, out, pv){
+  const say = m => { if ($(out)) $(out).textContent = m; };
+  try {
+    const blob = await new Promise(r => receiptCanvas(text).toBlob(r, "image/png"));
+    const file = new File([blob], "struk.png", {type: "image/png"});
+    if (navigator.canShare && navigator.canShare({files: [file]})){ await navigator.share({files: [file]}); say(""); return; }
+    throw new Error("noshare");
+  } catch(e){
+    if (e && e.name === "AbortError") return;
+    try {
+      $(pv).innerHTML = '<img alt="Foto struk" src="' + receiptCanvas(text).toDataURL("image/png") + '">';
+      say("Tekan lama gambar di bawah, lalu pilih Simpan atau Bagikan.");
+    } catch(e2){ say("Gagal membuat foto struk."); }
+  }
+}
+
+/* ---------- Printer ---------- */
+const HELP = {
+  rawbt: "Pasang aplikasi RawBT dari Play Store, pasangkan printer Bluetooth di pengaturan HP, lalu pilih printernya di RawBT (sekali saja). Cocok untuk hampir semua printer thermal murah.",
+  ble: "Menyambung langsung dari browser lewat Bluetooth LE. Hanya jalan di Chrome Android dan pada printer yang mendukung BLE. Kalau gagal, pakai RawBT.",
+  sys: "Memakai dialog cetak bawaan Android. Pilih printer, atau Simpan sebagai PDF. Hasil terbaik kalau layanan cetak printermu sudah terpasang."
+};
+const BLE_SERVICES = ["000018f0-0000-1000-8000-00805f9b34fb", "0000ffe0-0000-1000-8000-00805f9b34fb", "49535343-fe7d-4ae5-8fa9-9fafd205e455", "e7810a71-73ae-499d-8c15-faa9aef0c3f2", "0000ff00-0000-1000-8000-00805f9b34fb"];
+let btDev = null, btChar = null;
+function escposBytes(text){
+  const enc = t => Array.from(t.normalize("NFD").replace(/[\u0300-\u036f]/g, "")).map(c => c.charCodeAt(0) < 128 ? c.charCodeAt(0) : 63);
+  const out = [0x1B, 0x40], lines = text.split("\n");
+  lines.forEach((l, i) => {
+    if (i === 0) out.push(0x1B, 0x61, 1, 0x1B, 0x45, 1, ...enc(l), 0x0A, 0x1B, 0x45, 0, 0x1B, 0x61, 0);
+    else out.push(...enc(l), 0x0A);
+  });
+  out.push(0x0A, 0x0A, 0x0A);
+  return out;
+}
+async function btConnect(){
+  if (!navigator.bluetooth) throw new Error("nobt");
+  if (!btDev) btDev = await navigator.bluetooth.requestDevice({acceptAllDevices: true, optionalServices: BLE_SERVICES});
+  const srv = await btDev.gatt.connect();
+  for (const sv of await srv.getPrimaryServices()){
+    const c = (await sv.getCharacteristics()).find(x => x.properties.write || x.properties.writeWithoutResponse);
+    if (c){ btChar = c; return; }
+  }
+  throw new Error("nochar");
+}
+async function btSend(bytes){
+  if (!btChar || !btDev || !btDev.gatt.connected) await btConnect();
+  for (let i = 0; i < bytes.length; i += 20){
+    const ch = new Uint8Array(bytes.slice(i, i + 20));
+    if (btChar.properties.writeWithoutResponse) await btChar.writeValueWithoutResponse(ch); else await btChar.writeValue(ch);
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
+function rawbtPrint(bytes){
+  let bin = ""; bytes.forEach(b => bin += String.fromCharCode(b));
+  location.href = "intent:base64," + btoa(bin) + "#Intent;scheme=RawBT;package=ru.a402d.RawBTprinter;end;";
+}
+function sysPrint(t){
+  $("pgs").textContent = "@page{size:" + pcfg.w + "mm auto;margin:3mm}@media print{#pa{width:" + (pcfg.w - 6) + "mm}}";
+  $("pa").textContent = t; window.print();
+}
+async function doPrint(text, out){
+  const say = m => { if (out && $(out)) $(out).textContent = m; };
+  const t = text.replace(/^-{20,}$/gm, "-".repeat(pcfg.w === 80 ? 48 : 32));
+  try {
+    if (pcfg.mode === "rawbt"){ rawbtPrint(escposBytes(t)); say("Dikirim ke RawBT. Kalau tidak terjadi apa-apa, pastikan RawBT sudah terpasang dan printernya sudah dipilih di sana."); }
+    else if (pcfg.mode === "ble"){ say("Mengirim ke printer..."); await btSend(escposBytes(t)); say("Struk terkirim ke printer."); }
+    else sysPrint(t);
+  } catch(e){
+    btChar = null;
+    say(e.name === "NotFoundError" ? "Pemilihan printer dibatalkan."
+      : e.message === "nobt" ? "Browser ini tidak mendukung Bluetooth langsung. Pakai RawBT atau Cetak biasa."
+      : e.message === "nochar" ? "Printer tersambung tapi jalur cetaknya tidak ditemukan. Coba pakai RawBT."
+      : "Gagal mencetak. Pastikan printer menyala dan dekat, lalu coba lagi.");
+  }
+}
+function drawPrinter(){
+  $("pw58").classList.toggle("on", pcfg.w !== 80); $("pw80").classList.toggle("on", pcfg.w === 80);
+  document.querySelectorAll("#pmodes button").forEach(b => b.classList.toggle("on", b.dataset.m === pcfg.mode));
+  $("pmhelp").textContent = HELP[pcfg.mode] || ""; $("pauto").checked = !!pcfg.auto;
+  $("prPair").classList.toggle("hidden", pcfg.mode !== "ble");
+}
+function savePcfg(){ save("pcfg", JSON.stringify(pcfg)); drawPrinter(); }
+let prFrom = "";
+$("toPrinter").onclick = () => { prFrom = ""; drawPrinter(); $("prMsg").textContent = ""; show("printer"); };
+$("prSet").onclick = () => { prFrom = "receipt"; drawPrinter(); $("prMsg").textContent = ""; show("printer"); };
+$("prBack").onclick = () => { if (prFrom){ $("prsum").textContent = prSummary(); show("receipt"); } else show("shop"); prFrom = ""; };
+$("pw58").onclick = () => { pcfg.w = 58; savePcfg(); };
+$("pw80").onclick = () => { pcfg.w = 80; savePcfg(); };
+$("pmodes").onclick = e => { const b = e.target.closest("button[data-m]"); if (b){ pcfg.mode = b.dataset.m; savePcfg(); } };
+$("pauto").onchange = () => { pcfg.auto = $("pauto").checked; savePcfg(); };
+$("prPair").onclick = async () => {
+  try { btDev = null; btChar = null; await btConnect(); $("prMsg").textContent = "Tersambung ke " + (btDev.name || "printer") + "."; }
+  catch(e){ btChar = null; $("prMsg").textContent = e.name === "NotFoundError" ? "Pemilihan printer dibatalkan." : e.message === "nobt" ? "Browser ini tidak mendukung Bluetooth langsung. Pakai RawBT." : "Gagal tersambung. Coba RawBT."; }
+};
+$("prTest").onclick = () => doPrint((storeName || "TES PRINTER") + "\n--------------------------------\nLebar kertas " + pcfg.w + " mm\nHuruf dan angka: 0123456789\nRp 18.000   Rp 51.000\n--------------------------------\nPrinter siap dipakai", "prMsg");
+$("prnt").onclick = () => doPrint(lastReceipt, "prmsg");
+$("hlist").onclick = e => {
+  const b = e.target.closest("[data-pr],[data-im]"); if (!b) return;
+  const x = trx.find(t => String(t.no) === (b.dataset.pr || b.dataset.im)); if (!x) return;
+  if (b.dataset.im) shareImage(x.txt, "hmsg", "hpv"); else doPrint(x.txt, "hmsg");
+};
+
+/* ---------- Scan barcode ---------- */
+const normCode = c => String(c == null ? "" : c).trim().replace(/^0+/, "");
+const findByCode = c => items.find(x => x.code && normCode(x.code) === normCode(c));
+let scStream = null, scTimer = null, scDet = null, scTarget = "cart", scLast = "", scLastT = 0, scBusy = false, unk = "";
+function beep(){
+  try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; g.gain.value = .08; o.connect(g); g.connect(a.destination); o.start(); setTimeout(() => { o.stop(); a.close(); }, 90); } catch(e){}
+  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+}
+function scSay(m){ $("scmsg").textContent = m; }
+function scTot(){ const q = cart.reduce((a, c) => a + c.qty, 0); $("sctot").textContent = q ? q + " barang, Rp " + fmt(total()) : "Keranjang kosong"; }
+async function openScan(target){
+  scTarget = target; scLast = ""; unk = ""; $("screg").style.display = "none"; scTot();
+  $("scov").classList.remove("hidden");
+  scSay(target === "cart" ? "Arahkan kamera ke barcode produk" : "Arahkan kamera ke barcode untuk mengisi kode");
+  try {
+    scStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: "environment"}}, audio: false});
+    $("scv").srcObject = scStream; await $("scv").play();
+  } catch(e){ scSay("Kamera tidak bisa dibuka. Izinkan akses kamera di browser, atau ketik kodenya manual."); return; }
+  scDet = null;
+  if ("BarcodeDetector" in window){
+    try {
+      const sup = await BarcodeDetector.getSupportedFormats();
+      scDet = new BarcodeDetector({formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar", "qr_code"].filter(f => sup.includes(f))});
+    } catch(e){ scDet = null; }
+  }
+  if (!scDet) scSay("Browser ini hanya bisa membaca QR. Untuk barcode batang, ketik kodenya atau pakai scanner.");
+  scTimer = setInterval(scTick, 250);
+}
+async function scTick(){
+  const v = $("scv"); if (scBusy || !v.videoWidth) return; scBusy = true;
+  try {
+    let code = "";
+    if (scDet){ const r = await scDet.detect(v); if (r.length) code = r[0].rawValue; }
+    else if (window.jsQR){
+      const c = document.createElement("canvas"), k = Math.min(1, 640 / v.videoWidth); c.width = v.videoWidth * k; c.height = v.videoHeight * k;
+      const x = c.getContext("2d"); x.drawImage(v, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height), r = jsQR(d.data, d.width, d.height); if (r) code = r.data;
+    }
+    if (code && (code !== scLast || Date.now() - scLastT > 2000)){ scLast = code; scLastT = Date.now(); onScanned(code); }
+  } catch(e){}
+  scBusy = false;
+}
+function closeScan(){
+  clearInterval(scTimer); scTimer = null;
+  if (scStream){ scStream.getTracks().forEach(t => t.stop()); scStream = null; }
+  $("scv").srcObject = null; $("scov").classList.add("hidden");
+}
+function addByCode(code, say){
+  const it = findByCode(code);
+  if (!it){ unk = code; say("Kode " + code + " belum terdaftar."); return false; }
+  unk = ""; add(it.id, it.name, it.price); beep(); say("Ditambahkan: " + it.name + ", Rp " + fmt(it.price)); return true;
+}
+function onScanned(code){
+  code = String(code).trim();
+  if (scTarget === "field"){ $("icode").value = code; beep(); closeScan(); return; }
+  if (scTarget.startsWith("item:")){
+    const it = items.find(x => x.id === scTarget.slice(5)), other = findByCode(code);
+    if (other && it && other !== it){ scSay("Kode itu sudah dipakai " + other.name + "."); return; }
+    if (it){ it.code = code; save("items", JSON.stringify(items)); drawItems(); }
+    beep(); closeScan(); return;
+  }
+  const ok = addByCode(code, scSay); $("screg").style.display = ok ? "none" : ""; scTot();
+}
+$("scanGo").onclick = () => openScan("cart");
+$("iscan").onclick = () => openScan("field");
+$("scdone").onclick = closeScan;
+$("screg").onclick = () => { const c = unk; closeScan(); $("icode").value = c; drawItems(); show("items"); };
+document.addEventListener("visibilitychange", () => { if (document.hidden && scStream) closeScan(); });
+function typedCode(){
+  const v = $("scode").value.trim(); if (!v) return;
+  addByCode(v, m => { $("smsg").textContent = m; }); $("scode").value = "";
+}
+$("scodeGo").onclick = typedCode;
+$("scode").onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); typedCode(); } };
+function showLabel(id){
+  const it = items.find(x => x.id === id); if (!it) return;
+  if (!it.code){ it.code = "KSR" + Date.now().toString(36).toUpperCase(); save("items", JSON.stringify(items)); drawItems(); }
+  $("lbq").innerHTML = ""; new QRCode($("lbq"), {text: it.code, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M});
+  $("lbn").textContent = it.name; $("lbp").textContent = "Rp " + fmt(it.price) + ", kode " + it.code;
+  $("lblov").classList.remove("hidden");
+}
+$("lbx").onclick = () => $("lblov").classList.add("hidden");
+
+/* ---------- Warna ---------- */
+const PAL = ["#e8590c", "#2f9e44", "#1c7ed6", "#7048e8", "#d6336c", "#0c8599", "#f08c00", "#5c940d"];
+function gcolor(g){ let h = 0; for (const ch of String(g || "")) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return PAL[h % PAL.length]; }
+function tintGrid(){
+  document.querySelectorAll("#grid .item").forEach(b => { const it = items.find(x => x.id === b.dataset.id); if (it) b.style.setProperty("--g", gcolor(grp(it))); });
+}
+const _dg = drawGrid; drawGrid = function(){ _dg(); tintGrid(); };
+function applyAccent(a){
+  a = a || "biru"; const r = document.documentElement;
+  if (a === "biru") r.removeAttribute("data-accent"); else r.setAttribute("data-accent", a);
+  save("accent", a);
+  document.querySelectorAll("#swatches button").forEach(b => b.classList.toggle("on", b.dataset.ac === a));
+}
+$("swatches").onclick = e => { const b = e.target.closest("button[data-ac]"); if (b) applyAccent(b.dataset.ac); };
+applyAccent(load("accent"));
+
+/* ---------- Diskon, rekap, ekspor, animasi ---------- */
+let lastAdd = "";
+function drawDiscTitle(){
+  const da = discAmt();
+  $("discTitle").textContent = da ? "Diskon: -Rp " + fmt(da) + (disc.type === "pct" ? " (" + disc.val + "%)" : "") : "Diskon";
+}
+function drawDisc(){
+  $("dtFlat").classList.toggle("on", disc.type !== "pct"); $("dtPct").classList.toggle("on", disc.type === "pct");
+  $("dval").value = disc.val > 0 ? disc.val : ""; drawDiscTitle();
+}
+const _ds = drawShop;
+drawShop = function(){
+  _ds(); drawDiscTitle();
+  if (lastAdd){
+    const k = lastAdd; lastAdd = "";
+    const bd = document.querySelector('#grid .item[data-id="' + k + '"] i'); if (bd) bd.classList.add("bump");
+    const b = document.querySelector('#cart button[data-k="' + k + '"]'); if (b && b.closest(".line")) b.closest(".line").classList.add("flash");
+  }
+};
+const _add = add; add = function(k, n, p){ lastAdd = k; _add(k, n, p); };
+$("discToggle").onclick = () => { const h = $("discPanel").classList.toggle("hidden"); $("discToggle").textContent = h ? "Atur" : "Tutup"; };
+$("dtFlat").onclick = () => { disc.type = "flat"; drawDisc(); drawShop(); };
+$("dtPct").onclick = () => { disc.type = "pct"; disc.val = Math.min(100, disc.val); drawDisc(); drawShop(); };
+$("dval").oninput = () => { disc.val = Math.max(0, Number($("dval").value) || 0); if (disc.type === "pct") disc.val = Math.min(100, disc.val); drawShop(); };
+$("dquick").onclick = e => {
+  const b = e.target.closest("button[data-p]"); if (!b) return;
+  const p = Number(b.dataset.p); disc = p ? {type: "pct", val: p} : {type: "flat", val: 0}; drawDisc(); drawShop();
+};
+
+/* rekap harian */
+let rcDay = new Date();
+const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const parseYmd = v => { const [y, m, d] = v.split("-").map(Number); return new Date(y, m - 1, d); };
+function trxLines(x){
+  if (x.items) return x.items.map(i => ({name: i[0], qty: i[1], price: i[2]}));
+  const out = [], L = (x.txt || "").split("\n");
+  for (let i = 0; i < L.length - 1; i++){
+    const m = L[i + 1].match(/^\s+(\d+) x ([\d.]+)\s+Rp ([\d.]+)$/);
+    if (m) out.push({name: L[i], qty: +m[1], price: +m[2].replace(/\./g, "")});
+  }
+  return out;
+}
+function recapData(d, withItems){
+  const k = dayKey(d), list = trx.filter(x => dayKey(new Date(x.t)) === k);
+  const paid = list.filter(x => x.m === "tunai" || x.m === "qris"), ut = list.filter(x => x.m === "utang");
+  const sum = (arr, f) => arr.reduce((a, x) => a + (f(x) || 0), 0);
+  const r = {n: paid.length, tunai: sum(paid.filter(x => x.m === "tunai"), x => x.total), qris: sum(paid.filter(x => x.m === "qris"), x => x.total),
+    disc: sum(paid, x => x.disc), fee: sum(paid, x => x.fee), utang: sum(ut, x => x.total), nutang: ut.length, items: {}};
+  if (withItems) paid.forEach(x => trxLines(x).forEach(l => { const o = r.items[l.name] || (r.items[l.name] = {qty: 0, rp: 0}); o.qty += l.qty; o.rp += l.qty * l.price; }));
+  return r;
+}
+function countUp(el, to){
+  const t0 = performance.now();
+  (function f(t){ const k = Math.min(1, (t - t0) / 600); el.textContent = "Rp " + fmt(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(f); })(t0);
+}
+function drawRecap(){
+  const d = rcDay, r = recapData(d, true), row = (a, b, c) => `<div class="mrow"><span>${a}</span><b${c ? ` style="color:${c}"` : ""}>${b}</b></div>`;
+  $("rcDate").value = ymd(d);
+  $("rcSum").innerHTML = row("Jumlah transaksi", r.n) + row("Tunai", "Rp " + fmt(r.tunai), "#2b9348") + row("QRIS", "Rp " + fmt(r.qris), "#1c7ed6")
+    + (r.disc ? row("Diskon diberikan", "-Rp " + fmt(r.disc)) : "") + (r.fee ? row("Biaya admin", "Rp " + fmt(r.fee)) : "")
+    + (r.nutang ? row("Utang baru (" + r.nutang + ")", "Rp " + fmt(r.utang), "#d9480f") : "")
+    + `<div class="mrow" style="border:0"><b>Total masuk</b><b id="rcTot" style="color:var(--accent);font-size:20px">Rp 0</b></div>`;
+  countUp($("rcTot"), r.tunai + r.qris);
+  const ents = Object.entries(r.items).sort((a, b) => b[1].rp - a[1].rp);
+  $("rcItems").innerHTML = ents.length ? `<div class="mrow"><b>Barang terjual</b><span></span></div>` + ents.map(([n, o]) => `<div class="mrow"><span>${esc(n)} <small style="color:var(--muted)">x${o.qty}</small></span><b>Rp ${fmt(o.rp)}</b></div>`).join("") : `<p style="margin:14px 0">Belum ada penjualan di tanggal ini.</p>`;
+  const days = []; for (let i = 6; i >= 0; i--){ const x = new Date(); x.setDate(x.getDate() - i); days.push(x); }
+  const vals = days.map(x => { const q = recapData(x); return q.tunai + q.qris; }), mx = Math.max(1, ...vals);
+  $("rcBars").innerHTML = days.map((x, i) => `<button class="bar${dayKey(x) === dayKey(d) ? " on" : ""}" data-d="${ymd(x)}" style="--h:${Math.max(4, Math.round(vals[i] / mx * 100))}%;--i:${i}" aria-label="${x.toLocaleDateString("id-ID", {day: "numeric", month: "long"})}: Rp ${fmt(vals[i])}"><i></i><small>${x.toLocaleDateString("id-ID", {weekday: "short"})}</small></button>`).join("");
+}
+function recapText(d){
+  const r = recapData(d, true), R = n => "Rp " + fmt(n), T = (a, b) => (a + ":").padEnd(11) + b;
+  const L = ["REKAP HARIAN"]; if (storeName) L.push(storeName);
+  L.push(d.toLocaleDateString("id-ID", {weekday: "long", day: "2-digit", month: "long", year: "numeric"}), "--------------------------------",
+    T("Transaksi", r.n), T("Tunai", R(r.tunai)), T("QRIS", R(r.qris)), T("TOTAL", R(r.tunai + r.qris)));
+  if (r.disc) L.push(T("Diskon", R(r.disc)));
+  if (r.fee) L.push(T("Biaya adm.", R(r.fee)));
+  if (r.nutang) L.push(T("Utang baru", R(r.utang) + " (" + r.nutang + ")"));
+  const ents = Object.entries(r.items).sort((a, b) => b[1].rp - a[1].rp);
+  if (ents.length){ L.push("--------------------------------", "BARANG TERJUAL"); ents.forEach(([n, o]) => L.push(n + " x" + o.qty, "  " + R(o.rp))); }
+  return L.join("\n");
+}
+async function shareTxt(text, out){
+  try { if (navigator.share){ await navigator.share({text}); return; } } catch(e){ if (e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(text); $(out).textContent = "Tersalin. Tempel ke WhatsApp atau pesan."; } catch(e){ $(out).textContent = "Gagal membagikan."; }
+}
+$("toRecap").onclick = () => { rcDay = new Date(); drawRecap(); $("rcMsg").textContent = ""; show("recap"); };
+$("rcBack").onclick = () => show("shop");
+$("rcPrev").onclick = () => { rcDay = new Date(rcDay.getFullYear(), rcDay.getMonth(), rcDay.getDate() - 1); drawRecap(); };
+$("rcNext").onclick = () => { rcDay = new Date(rcDay.getFullYear(), rcDay.getMonth(), rcDay.getDate() + 1); drawRecap(); };
+$("rcDate").onchange = () => { if ($("rcDate").value){ rcDay = parseYmd($("rcDate").value); drawRecap(); } };
+$("rcBars").onclick = e => { const b = e.target.closest("button[data-d]"); if (b){ rcDay = parseYmd(b.dataset.d); drawRecap(); } };
+$("rcPrint").onclick = () => doPrint(recapText(rcDay), "rcMsg");
+$("rcCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText(recapText(rcDay)); $("rcMsg").textContent = "Rekap tersalin."; } catch(e){ $("rcMsg").textContent = "Gagal menyalin."; }
+};
+$("rcShare").onclick = () => shareTxt(recapText(rcDay), "rcMsg");
+
+/* ekspor katalog */
+const exRows = () => [["Nama Barang", "Harga", "Kelompok", "Kode"]].concat(items.map(it => [it.name, it.price, it.group || "", it.code || ""]));
+function dlFile(name, blob){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+$("toExport").onclick = () => { $("exSum").innerHTML = `<div class="mrow" style="border:0"><span>Jumlah barang</span><b>${items.length}</b></div>`; $("exMsg").textContent = ""; show("export"); };
+$("exBack").onclick = () => show("shop");
+$("exBk").onclick = () => { drawBackup(); $("bkMsg").textContent = ""; show("backup"); };
+$("exXlsx").onclick = () => {
+  try {
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(exRows()), "Katalog");
+    XLSX.writeFile(wb, "katalog-barang.xlsx");
+    $("exMsg").textContent = "File katalog-barang.xlsx disimpan (biasanya di folder Download). Simpan juga salinannya di Google Drive.";
+  } catch(e){ $("exMsg").textContent = "Gagal membuat file Excel. Coba Salin tabel."; }
+};
+$("exCsv").onclick = () => {
+  try {
+    dlFile("katalog-barang.csv", new Blob(["\uFEFF" + exRows().map(r => r.map(v => String(v).replace(/[;\r\n]/g, " ")).join(";")).join("\n")], {type: "text/csv"}));
+    $("exMsg").textContent = "File katalog-barang.csv disimpan, dipisah dengan titik koma. Bisa diimpor lagi ke aplikasi ini.";
+  } catch(e){ $("exMsg").textContent = "Gagal membuat file CSV. Coba Salin tabel."; }
+};
+$("exCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText(exRows().map(r => r.map(v => String(v).replace(/[\t\r\n]/g, " ")).join("\t")).join("\n")); $("exMsg").textContent = "Tabel tersalin. Buka Google Sheets atau Excel, ketuk satu sel, lalu tempel."; }
+  catch(e){ $("exMsg").textContent = "Gagal menyalin."; }
+};
+
+/* animasi: riak sentuhan dan konfeti */
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest("button"); if (!b || b.disabled || b.closest("#scov")) return;
+  const r = b.getBoundingClientRect(), z = Math.max(r.width, r.height) * 1.6, o = document.createElement("span");
+  o.className = "rip"; o.style.cssText = "width:" + z + "px;height:" + z + "px;left:" + (e.clientX - r.left - z / 2) + "px;top:" + (e.clientY - r.top - z / 2) + "px";
+  if (getComputedStyle(b).position === "static") b.style.position = "relative";
+  b.style.overflow = "hidden"; b.appendChild(o); setTimeout(() => o.remove(), 520);
+});
+function burst(){
+  const o = $("okmark"), cols = ["#e8590c", "#2f9e44", "#1c7ed6", "#7048e8", "#d6336c", "#f08c00"];
+  for (let i = 0; i < 16; i++){
+    const sp = document.createElement("span"), a = Math.random() * Math.PI * 2, r = 50 + Math.random() * 60;
+    sp.className = "cf"; sp.style.cssText = "--c:" + cols[i % 6] + ";--dx:" + Math.cos(a) * r + "px;--dy:" + Math.sin(a) * r + "px;--r:" + Math.round(Math.random() * 360) + "deg";
+    o.appendChild(sp); setTimeout(() => sp.remove(), 1000);
+  }
+}
+
+/* ---------- Menu, utang, cadangan ---------- */
+const MLAB = {tunai: "Tunai", qris: "QRIS", utang: "Belum dibayar", lunas: "Utang lunas"};
+$("toMenu").onclick = () => show("menu");
+$("menuBack").onclick = () => show("shop");
+function setStatus(st){
+  rStatus = st; const u = st !== "paid";
+  $("stPaid").classList.toggle("on", !u); $("stUnpaid").classList.toggle("on", u);
+  $("cname").classList.toggle("hidden", !u);
+  $("pay").classList.toggle("hidden", u); $("payCash").classList.toggle("hidden", u); $("payDebt").classList.toggle("hidden", !u);
+}
+$("stPaid").onclick = () => setStatus("paid");
+$("stUnpaid").onclick = () => setStatus("unpaid");
+$("payDebt").onclick = () => {
+  const name = $("cname").value.trim();
+  if (!name){ const c = $("cname"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); c.focus(); return; }
+  payInfo = {m: "utang", name};
+  makeReceipt();
+};
+function drawDebt(){
+  const sum = debts.reduce((a, d) => a + d.total, 0);
+  $("dsum").innerHTML = `<div class="mrow"><span>Jumlah utang</span><b>${debts.length}</b></div><div class="mrow" style="border-bottom:0"><b>Total belum dibayar</b><b>Rp ${fmt(sum)}</b></div>`;
+  $("dlist").innerHTML = debts.length ? debts.map(d => `<div class="cart" style="margin:0 0 12px;padding:14px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:17px">${esc(d.name)}</b><b>Rp ${fmt(d.total)}</b></div><p style="margin:6px 0 4px">${d.cart.map(c => c.qty + "x " + esc(c.name)).join(", ")}</p><p style="margin:0 0 10px;font-size:12px">${new Date(d.t).toLocaleDateString("id-ID", {day: "2-digit", month: "short", year: "numeric"})}${d.note ? ", " + esc(d.note) : ""}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="go" style="height:44px;margin:0;font-size:14px" data-d="${d.id}" data-a="tunai">Lunas tunai</button><button class="go alt" style="height:44px;margin:0;font-size:14px" data-d="${d.id}" data-a="qris">Lunas QRIS</button></div><button class="link" style="color:var(--danger);margin-top:6px" data-d="${d.id}" data-a="del">Hapus utang</button></div>`).join("") : "<p>Tidak ada utang. Pilih Belum dibayar di layar kasir untuk mencatat utang.</p>";
+}
+$("toDebt").onclick = () => { drawDebt(); show("debt"); };
+$("debtBack").onclick = () => show("shop");
+let armD = 0;
+$("dlist").onclick = e => {
+  const b = e.target.closest("button[data-d]"); if (!b) return;
+  const d = debts.find(x => String(x.id) === b.dataset.d); if (!d) return;
+  const act = b.dataset.a;
+  if (act === "del"){
+    if (armD !== d.id){ armD = d.id; b.textContent = "Yakin hapus?"; return; }
+    debts = debts.filter(x => x !== d); armD = 0; save("debts", JSON.stringify(debts)); drawPendBtn(); drawDebt(); return;
+  }
+  const o = trx.find(x => x.no === d.no && x.m === "utang"); if (o) o.m = "lunas";
+  debts = debts.filter(x => x !== d); save("debts", JSON.stringify(debts));
+  const keep = cart, kd = disc; cart = d.cart; disc = d.dsc || {type: "flat", val: 0};
+  payInfo = {m: act, name: d.name, ref: d.no, fixedFee: d.fee || 0, paid: d.total, change: 0};
+  makeReceipt(null, d.note || "");
+  cart = keep; disc = kd; fromPend = "debt"; drawPendBtn();
+};
+
+function backupData(){ return {app: "kasir-qris", v: 1, at: new Date().toISOString(), items, store: storeName, fee, qris: staticQris, trx, pend, debts, pcfg, accent: load("accent") || "biru", no: Number(load("no")) || 0}; }
+function drawBackup(){
+  const t = load("lastBackup");
+  $("bkLast").textContent = t ? new Date(t).toLocaleString("id-ID", {dateStyle: "medium", timeStyle: "short"}) : "belum pernah";
+}
+$("toBackup").onclick = () => { drawBackup(); $("bkMsg").textContent = ""; show("backup"); };
+$("bkBack").onclick = () => show("shop");
+$("bkDl").onclick = () => {
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(backupData())], {type: "application/json"}));
+    a.download = "cadangan-kasir-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    save("lastBackup", new Date().toISOString()); drawBackup();
+    $("bkMsg").textContent = "File cadangan disimpan (biasanya di folder Download). Pindahkan ke tempat aman, misalnya Google Drive.";
+  } catch(e){ $("bkMsg").textContent = "Gagal membuat file. Coba Salin cadangan sebagai teks."; }
+};
+$("bkCopy").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(backupData()));
+    save("lastBackup", new Date().toISOString()); drawBackup();
+    $("bkMsg").textContent = "Cadangan tersalin. Tempel ke catatan atau kirim ke dirimu sendiri.";
+  } catch(e){ $("bkMsg").textContent = "Gagal menyalin."; }
+};
+function restoreFrom(txt){
+  let d; try { d = JSON.parse(txt); } catch(e){ d = null; }
+  if (!d || d.app !== "kasir-qris" || !Array.isArray(d.items)){ $("bkMsg").textContent = "File atau teks ini bukan cadangan kasir yang valid."; return; }
+  save("items", JSON.stringify(d.items)); save("store", d.store || ""); save("fee", JSON.stringify(d.fee || {}));
+  if (d.qris) save("qris", d.qris);
+  save("trx", JSON.stringify(d.trx || [])); save("pend", JSON.stringify(d.pend || [])); save("debts", JSON.stringify(d.debts || [])); save("no", d.no || 0); save("pcfg", JSON.stringify(d.pcfg || {})); save("accent", d.accent || "biru");
+  location.reload();
+}
+$("bkRestore").onclick = () => restoreFrom($("bkText").value);
+$("bkFile").onchange = async e => { const f = e.target.files[0]; if (f) restoreFrom(await f.text()); e.target.value = ""; };
+
+/* ---------- Riwayat ---------- */
+const dayKey = d => d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+function drawHist(){
+  const today = dayKey(new Date());
+  const list = trx.filter(x => dayKey(new Date(x.t)) === today);
+  const sum = m => list.filter(x => x.m === m).reduce((s, x) => s + x.total, 0);
+  $("hsum").innerHTML = `<div class="mrow"><span>Jumlah transaksi</span><b>${list.length}</b></div>
+    <div class="mrow"><span>Tunai</span><b>Rp ${fmt(sum("tunai"))}</b></div>
+    <div class="mrow"><span>QRIS</span><b>Rp ${fmt(sum("qris"))}</b></div>
+    <div class="mrow" style="border-bottom:0"><b>Total</b><b>Rp ${fmt(sum("tunai") + sum("qris"))}</b></div>`;
+  $("hlist").innerHTML = list.length ? list.slice().reverse().map(x => `<details style="border-bottom:1px solid var(--line);padding:10px 0"><summary style="cursor:pointer;display:flex;justify-content:space-between;gap:8px"><span>No. ${String(x.no).padStart(4, "0")}, ${new Date(x.t).toLocaleTimeString("id-ID", {hour: "2-digit", minute: "2-digit"})}, <span class="bd bd-${x.m || "qris"}">${MLAB[x.m] || "QRIS"}</span></span><b>Rp ${fmt(x.total)}</b></summary><div class="receipt" style="margin-top:8px">${esc(x.txt)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="go alt" style="height:40px;margin:0;font-size:14px" data-pr="${x.no}">Cetak ulang</button><button class="go alt" style="height:40px;margin:0;font-size:14px" data-im="${x.no}">Bagikan foto</button></div></details>`).join("") : "<p>Belum ada transaksi hari ini.</p>";
+}
+$("toHist").onclick = () => { drawHist(); show("hist"); };
+$("histBack").onclick = () => show("shop");
+function trxRows(sep){
+  const pad = n => String(n).padStart(2, "0");
+  return [["No", "Tanggal", "Jam", "Metode", "Biaya admin", "Total"].join(sep)].concat(trx.map(x => {
+    const d = new Date(x.t);
+    return [x.no, d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()), pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()), MLAB[x.m] || "QRIS", x.fee || 0, x.total].join(sep);
+  }));
+}
+$("hdl").onclick = () => {
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["\uFEFF" + trxRows(",").join("\n")], {type: "text/csv"}));
+    a.download = "riwayat-kasir.csv"; document.body.appendChild(a); a.click(); a.remove();
+  } catch(e){}
+};
+$("hcsv").onclick = async () => {
+  try { await navigator.clipboard.writeText(trxRows("\t").join("\n")); $("hcsv").textContent = "Tersalin, tempel ke spreadsheet"; }
+  catch(e){ $("hcsv").textContent = "Gagal menyalin"; }
+  setTimeout(() => $("hcsv").textContent = "Salin semua transaksi", 2500);
+};
+let armed = false;
+$("hclear").onclick = () => {
+  if (!armed){
+    armed = true; $("hclear").textContent = "Ketuk lagi untuk hapus semua riwayat";
+    setTimeout(() => { armed = false; $("hclear").textContent = "Hapus riwayat"; }, 3000);
+    return;
+  }
+  trx = []; save("trx", "[]"); armed = false; $("hclear").textContent = "Hapus riwayat"; drawHist();
+};
+
+/* ---------- Impor spreadsheet ---------- */
+function toPrice(v){
+  if (typeof v === "number") return Math.round(v);
+  const d = String(v == null ? "" : v).replace(/\D/g, "");
+  return d ? parseInt(d, 10) : 0;
+}
+function textRows(t){
+  return t.split(/\r?\n/).map(l => {
+    if (!l.trim()) return null;
+    if (l.includes("\t")){ const p = l.split("\t"); return [p[0], p[1], p[2], p[3]]; }
+    const sp = l.split(";"); if (sp.length === 3 || sp.length === 4) return sp;
+    const i = Math.max(l.lastIndexOf(";"), l.lastIndexOf(","));
+    return i < 0 ? [l, ""] : [l.slice(0, i), l.slice(i + 1)];
+  }).filter(Boolean);
+}
+function importRows(rows){
+  if ($("replace").checked){ items = []; cart = cart.filter(c => c.key[0] !== "i"); }
+  let a = 0, u = 0, s = 0;
+  rows.forEach((r, n) => {
+    const name = String(r[0] == null ? "" : r[0]).replace(/^"|"$/g, "").trim(), price = toPrice(r[1]), gr = String(r[2] == null ? "" : r[2]).trim(), cd = String(r[3] == null ? "" : r[3]).trim();
+    if (!name || price <= 0){ s++; return; }
+    const ex = items.find(x => x.name.toLowerCase() === name.toLowerCase());
+    if (ex){ ex.price = price; if (gr) ex.group = gr; if (cd) ex.code = cd; const c = cart.find(x => x.key === ex.id); if (c) c.price = price; u++; }
+    else { items.push({id: "i" + Date.now() + "_" + n, name, price, group: gr, code: cd}); a++; }
+  });
+  save("items", JSON.stringify(items)); drawItems(); drawShop();
+  $("imsg").textContent = a + " barang ditambah, " + u + " diperbarui, " + s + " baris dilewati (judul atau harga kosong).";
+}
+$("ifile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    if (/\.(csv|txt)$/i.test(f.name)) importRows(textRows(await f.text()));
+    else {
+      const wb = XLSX.read(await f.arrayBuffer(), {type: "array"});
+      importRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, raw: true}));
+    }
+  } catch(err){ $("imsg").textContent = "File tidak bisa dibaca. Pakai .xlsx, .xls, atau .csv dengan nama di kolom A dan harga di kolom B."; }
+  e.target.value = "";
+};
+$("ipaste").onclick = () => { importRows(textRows($("itext").value)); $("itext").value = ""; };
+
+/* ---------- Pengaturan ---------- */
+function feeNote(){
+  if (!fee.on || !(fee.val > 0)) return "Biaya admin nonaktif.";
+  const ex = fee.type === "pct" ? Math.round(50000 * fee.val / 100) : Math.round(fee.val);
+  const w = fee.apply === "all" ? "semua metode bayar" : fee.apply === "qris" ? "pembayaran QRIS saja" : "pembayaran tunai saja";
+  return "Contoh: transaksi Rp 50.000 kena biaya Rp " + fmt(ex) + ", berlaku untuk " + w + ".";
+}
+function drawSet(){
+  $("fon").checked = fee.on; $("ftype").value = fee.type; $("fval").value = fee.val || "";
+  $("fapply").value = fee.apply; $("flabel").value = fee.label === "Biaya admin" ? "" : fee.label;
+  $("fnote").textContent = feeNote();
+}
+function saveSet(){
+  fee = {on: $("fon").checked, type: $("ftype").value, val: Math.max(0, Number($("fval").value) || 0), apply: $("fapply").value, label: $("flabel").value.trim() || "Biaya admin"};
+  save("fee", JSON.stringify(fee)); $("fnote").textContent = feeNote();
+}
+["fon","ftype","fval","fapply","flabel"].forEach(id => { $(id).addEventListener("input", saveSet); $(id).addEventListener("change", saveSet); });
+$("toSet").onclick = () => { drawSet(); show("settings"); };
+$("setDone").onclick = () => { drawShop(); show("shop"); };
+
+/* ---------- Setup ---------- */
+$("change").onclick = () => { $("raw").value = ""; $("err").textContent = ""; show("setup"); };
+function saveQris(text){
+  text = (text || "").trim();
+  if (!validQris(text)){ $("err").textContent = "QRIS tidak terbaca atau tidak valid. Coba gambar yang lebih jelas atau tempel teksnya."; return; }
+  staticQris = text; save("qris", text); $("err").textContent = ""; drawShop(); show("shop");
+}
+$("save").onclick = () => saveQris($("raw").value);
+$("file").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"), r = Math.min(1, 1400 / Math.max(img.width, img.height));
+    c.width = img.width * r; c.height = img.height * r;
+    const x = c.getContext("2d"); x.drawImage(img, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height), res = jsQR(d.data, d.width, d.height);
+    if (res){ $("raw").value = res.data; saveQris(res.data); }
+    else $("err").textContent = "QR tidak ditemukan di gambar. Pastikan hanya QRIS yang terlihat, atau tempel teksnya.";
+  };
+  img.src = URL.createObjectURL(f);
+};
+
+/* ---------- Init ---------- */
+try { items = JSON.parse(load("items") || "[]"); } catch(e){ items = []; }
+try { trx = JSON.parse(load("trx") || "[]"); } catch(e){ trx = []; }
+try { pend = JSON.parse(load("pend") || "[]"); } catch(e){ pend = []; }
+try { debts = JSON.parse(load("debts") || "[]"); } catch(e){ debts = []; }
+try { pcfg = Object.assign(pcfg, JSON.parse(load("pcfg") || "{}")); } catch(e){}
+storeName = load("store"); staticQris = load("qris");
+try { fee = Object.assign(fee, JSON.parse(load("fee") || "{}")); } catch(e){}
+drawAmt(); drawShop(); drawPendBtn();
+try {
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='#0b57d0'/><g fill='#fff' transform='translate(32 32) scale(.7) translate(-32 -30.5)'><rect x='22' y='3' width='20' height='14' rx='2'/><rect x='12' y='14' width='40' height='12' rx='3'/><path d='M7 29h50l5 24a4 4 0 0 1-4 5H6a4 4 0 0 1-4-5z'/></g><g fill='#0b57d0' transform='translate(32 32) scale(.7) translate(-32 -30.5)'><rect x='18' y='18' width='28' height='4' rx='1.5'/><circle cx='18' cy='38' r='3'/><circle cx='32' cy='38' r='3'/><circle cx='46' cy='38' r='3'/><circle cx='18' cy='48' r='3'/><circle cx='32' cy='48' r='3'/><rect x='41' y='45' width='10' height='6' rx='2'/></g></svg>";
+  document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="data:image/svg+xml,' + encodeURIComponent(svg) + '">');
+} catch(e){}
+validQris(staticQris) ? show("shop") : show("setup");
+</script>
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+</script>
+</body>
+</html>
